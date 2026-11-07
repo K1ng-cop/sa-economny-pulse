@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: stg_fx_rates
+    description: Daily rand exchange rates. One row per rate_date and currency_code.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [rate_date, currency_code]
+    columns:
+      - name: rate_date
+        description: The day the rate applies to. Working days only - no weekends or public holidays.
+        data_tests:
+          - not_null
+      - name: currency_code
+        description: The foreign currency, priced in rand.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [USD, EUR, GBP]
+      - name: zar_per_unit
+        description: Rand per one unit of the currency, e.g. 18.20 for USD.
+        data_tests:
+          - not_null

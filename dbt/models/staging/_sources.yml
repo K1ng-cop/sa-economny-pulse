@@ -1,0 +1,39 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Tables loaded by the Python extractors in extract/. Never edited by hand.
+    schema: raw
+    config:
+      loaded_at_field: _loaded_at
+    tables:
+      - name: fx_rates
+        description: Daily exchange rates from the Frankfurter API, as "1 base_currency = rate ZAR".
+        config:
+          freshness:
+            warn_after: {count: 3, period: day}
+            error_after: {count: 5, period: day}
+
+      - name: weather_daily
+        description: Daily Cape Town weather from the Open-Meteo archive (runs about 5 days behind).
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 10, period: day}
+
+      - name: cpi_series
+        description: One row per Stats SA CPI series (header fields H01-H25).
+
+      - name: cpi_values
+        description: Monthly CPI index values, one row per series per month.
+        config:
+          freshness:
+            warn_after: {count: 35, period: day}
+            error_after: {count: 45, period: day}
+
+      - name: fuel_prices
+        description: Monthly fuel prices in cents, scraped from the Fuels Industry Association page.
+        config:
+          freshness:
+            warn_after: {count: 35, period: day}
+            error_after: {count: 45, period: day}
