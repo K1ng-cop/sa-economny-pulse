@@ -23,3 +23,102 @@ models:
         description: Rand per one unit of the currency, e.g. 18.20 for USD.
         data_tests:
           - not_null
+
+  - name: stg_weather_daily
+    description: Daily weather per location. One row per weather_date and location.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [weather_date, location]
+    columns:
+      - name: weather_date
+        description: The South African calendar day (Africa/Johannesburg).
+        data_tests:
+          - not_null
+      - name: location
+        data_tests:
+          - not_null
+      - name: temp_max_c
+        description: Highest temperature of the day, 2 m above ground, in degrees Celsius.
+      - name: temp_mean_c
+        description: Average temperature of the day, in degrees Celsius.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: rain_mm
+        description: Total rainfall for the day, in millimetres.
+      - name: wind_max_kmh
+        description: Strongest wind speed of the day, 10 m above ground, in km/h.
+
+  - name: stg_cpi_series
+    description: What each Stats SA CPI series code means. One row per series_code.
+    columns:
+      - name: series_code
+        description: Stats SA series code, e.g. CPS00000 for headline CPI.
+        data_tests:
+          - not_null
+          - unique
+      - name: series_name
+        description: Series label, e.g. "CPI Headline" or "Food and non-alcoholic beverages".
+      - name: area
+        description: Geography the series covers, e.g. "All urban areas".
+      - name: base_period
+        description: Period when the index equals 100, e.g. "Dec 2024 = 100".
+
+  - name: stg_cpi_values
+    description: Monthly CPI index values. One row per series_code and period_month.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series_code, period_month]
+    columns:
+      - name: series_code
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_cpi_series')
+                field: series_code
+      - name: period_month
+        description: First day of the month the index applies to.
+        data_tests:
+          - not_null
+      - name: index_value
+        description: Index level, relative to the series base period (= 100).
+        data_tests:
+          - not_null
+
+  - name: stg_fuel_prices
+    description: Regulated fuel prices. One row per effective_date, region and product_code.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [effective_date, region, product_code]
+    columns:
+      - name: effective_date
+        description: The date the price took effect (usually the first Wednesday of the month).
+        data_tests:
+          - not_null
+      - name: region
+        description: Coastal or Gauteng (the usual "inland" reference price).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [coastal, gauteng]
+      - name: product_code
+        description: Our short code for the product. "unmapped" means a new label needs adding to the CASE.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [petrol_95_ulp, petrol_95_lrp, petrol_93_ulp, petrol_93_lrp,
+                         diesel_500ppm, diesel_50ppm, paraffin, lpg]
+      - name: price_unit
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [litre, kg]
+      - name: price_rand
+        description: Price in rand per litre (or per kg for LPG).
+        data_tests:
+          - not_null
