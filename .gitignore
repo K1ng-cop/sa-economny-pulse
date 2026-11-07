@@ -1,7 +1,9 @@
 .env
 .venv/
 __pycache__/
+data/
+.dagster/
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
-.dagster/
+dbt/package-lock.concurrent-update-lock

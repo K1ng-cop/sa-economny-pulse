@@ -9,10 +9,11 @@ import logging
 import os
 from datetime import date, timedelta
 
-import psycopg2
+#import psycopg2
 import requests
 from dotenv import load_dotenv
 from psycopg2.extras import execute_values
+from extract.db import get_connection
 
 API_URL = "https://api.frankfurter.dev/v2/rates"
 BASE_CURRENCIES = ["USD", "EUR", "GBP"]  # rates come back as "1 USD = x ZAR"
@@ -41,14 +42,14 @@ DO UPDATE SET rate = EXCLUDED.rate, _loaded_at = now();
 """
 
 
-def get_connection():
+"""def get_connection():
     return psycopg2.connect(
         host=os.getenv("POSTGRES_HOST", "localhost"),
         port=os.getenv("POSTGRES_PORT", "5432"),
         dbname=os.environ["POSTGRES_DB"],
         user=os.environ["POSTGRES_USER"],
         password=os.environ["POSTGRES_PASSWORD"],
-    )
+    )"""
 
 
 def start_date_for(cur, base):
