@@ -1,13 +1,16 @@
 version: 2
 
 models:
-  - name: stg_fx_rates
-    description: Daily rand exchange rates. One row per rate_date and currency_code.
-    data_tests:
+    - name: stg_fx_rates
+      description: Daily rand exchange rates. One row per rate_date and currency_code.
+      data_tests:
+      - daily_row_count_drift:          # NEW
+          arguments:                     # NEW
+            date_column: rate_date       # NEW
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [rate_date, currency_code]
-    columns:
+      columns:
       - name: rate_date
         description: The day the rate applies to. Working days only - no weekends or public holidays.
         data_tests:
@@ -24,13 +27,13 @@ models:
         data_tests:
           - not_null
 
-  - name: stg_weather_daily
-    description: Daily weather per location. One row per weather_date and location.
-    data_tests:
+    - name: stg_weather_daily
+      description: Daily weather per location. One row per weather_date and location.
+      data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [weather_date, location]
-    columns:
+      columns:
       - name: weather_date
         description: The South African calendar day (Africa/Johannesburg).
         data_tests:
@@ -51,9 +54,9 @@ models:
       - name: wind_max_kmh
         description: Strongest wind speed of the day, 10 m above ground, in km/h.
 
-  - name: stg_cpi_series
-    description: What each Stats SA CPI series code means. One row per series_code.
-    columns:
+    - name: stg_cpi_series
+      description: What each Stats SA CPI series code means. One row per series_code.
+      columns:
       - name: series_code
         description: Stats SA series code, e.g. CPS00000 for headline CPI.
         data_tests:
@@ -66,13 +69,13 @@ models:
       - name: base_period
         description: Period when the index equals 100, e.g. "Dec 2024 = 100".
 
-  - name: stg_cpi_values
-    description: Monthly CPI index values. One row per series_code and period_month.
-    data_tests:
+    - name: stg_cpi_values
+      description: Monthly CPI index values. One row per series_code and period_month.
+      data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [series_code, period_month]
-    columns:
+      columns:
       - name: series_code
         data_tests:
           - not_null
@@ -89,13 +92,13 @@ models:
         data_tests:
           - not_null
 
-  - name: stg_fuel_prices
-    description: Regulated fuel prices. One row per effective_date, region and product_code.
-    data_tests:
+    - name: stg_fuel_prices
+      description: Regulated fuel prices. One row per effective_date, region and product_code.
+      data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [effective_date, region, product_code]
-    columns:
+      columns:
       - name: effective_date
         description: The date the price took effect (usually the first Wednesday of the month).
         data_tests:

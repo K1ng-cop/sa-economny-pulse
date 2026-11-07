@@ -90,3 +90,11 @@ models:
         description: Last month's rand move - compare with this month's fuel price change.
       - name: cpi_headline_yoy_pct
         description: Headline CPI inflation (series CPS00000), as published by Stats SA.
+        data_tests:                                  # NEW
+          - dbt_utils.accepted_range:                # NEW
+              arguments:                             # NEW
+                min_value: -5                        # NEW
+                max_value: 20                        # NEW
+              config:                                # NEW
+                severity: warn                       # NEW
+
