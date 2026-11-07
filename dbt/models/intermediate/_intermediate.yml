@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: int_fx_rates_filled
+    description: >
+      Daily rand exchange rates for every calendar day. Days with no published rate
+      (weekends, public holidays) carry the previous rate forward, flagged by is_filled.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [rate_date, currency_code]
+    columns:
+      - name: rate_date
+        data_tests:
+          - not_null
+      - name: zar_per_unit
+        description: Rand per unit of currency; on filled days, the last published rate.
+        data_tests:
+          - not_null  # proves every gap was filled
+      - name: is_filled
+        description: True when no rate was published that day and the value was carried forward.
+
+  - name: int_cpi_inflation
+    description: CPI with series labels, year-on-year inflation and month-on-month change.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series_code, period_month]
+    columns:
+      - name: yoy_inflation_pct
+        description: >
+          Percentage change from the same month a year earlier - the "inflation rate"
+          Stats SA and the news report. Null for the first year of each series.
+      - name: mom_change_pct
+        description: Percentage change from the previous month.
+
+  - name: int_fuel_prices_monthly
+    description: Monthly fuel price per region and product, with the change from the previous adjustment.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [period_month, region, product_code]
+    columns:
+      - name: change_rand
+        description: Rand change from the previous adjustment. Null for the first month.
