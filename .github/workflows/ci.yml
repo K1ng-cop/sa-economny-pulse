@@ -1,0 +1,58 @@
+# Builds and tests the whole dbt project on every push and pull request.
+# GitHub starts a fresh Postgres for each run, so nothing here touches your real data.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pulse
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: sa_economy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pulse -d sa_economy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: ci_password  # a throwaway database that only exists during this job
+      POSTGRES_DB: sa_economy
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create schemas and empty raw tables
+        run: python -m scripts.setup_empty_database
+
+      - name: Install dbt packages
+        working-directory: dbt
+        run: dbt deps
+
+      - name: Build and test every dbt model
+        working-directory: dbt
+        run: dbt build

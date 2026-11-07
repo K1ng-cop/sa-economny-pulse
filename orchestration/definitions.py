@@ -4,11 +4,13 @@ Start the UI from the repo root:
     dagster dev -f orchestration/definitions.py
 then open http://localhost:3000
 """
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 import dagster as dg
+import requests 
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -129,10 +131,32 @@ def new_cpi_file(context: dg.SensorEvaluationContext):
     return dg.RunRequest(run_key=newest)
 
 
+# ---------------------------------------------------------------- alerts
+
+@dg.run_failure_sensor(default_status=dg.DefaultSensorStatus.RUNNING)
+def alert_on_failure(context: dg.RunFailureSensorContext):
+    """Send a message to Slack or Discord whenever any run fails - an API down, a dbt test
+    catching bad data, anything. Set ALERT_WEBHOOK_URL in .env to switch it on."""
+    run = context.dagster_run
+    failed_steps = [event.step_key for event in context.get_step_failure_events()]
+    message = (
+        f"SA Economy Pulse: job '{run.job_name}' failed\n"
+        f"Failed steps: {', '.join(failed_steps) or 'see run'}\n"
+        f"Details: http://localhost:3000/runs/{run.run_id}"
+    )
+
+    url = os.getenv("ALERT_WEBHOOK_URL")
+    if not url:
+        context.log.warning(f"ALERT_WEBHOOK_URL not set, so no alert sent:\n{message}")
+        return
+    payload = {"content": message} if "discord" in url else {"text": message}  # Discord vs Slack
+    requests.post(url, json=payload, timeout=10).raise_for_status()
+
+
 defs = dg.Definitions(
     assets=[fx_rates, weather_daily, fuel_prices, cpi, dbt_models],
     jobs=[daily_refresh, fuel_refresh, cpi_refresh],
     schedules=[daily_schedule, fuel_schedule],
-    sensors=[new_cpi_file],
+    sensors=[new_cpi_file, alert_on_failure],
     resources={"dbt": DbtCliResource(project_dir=dbt_project)},
 )
