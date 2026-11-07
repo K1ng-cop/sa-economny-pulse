@@ -1,0 +1,9 @@
+product_code,product_name,fuel_type,grade,price_basis
+petrol_95_ulp,Petrol 95 unleaded,petrol,95 octane,retail
+petrol_95_lrp,Petrol 95 lead replacement,petrol,95 octane,retail
+petrol_93_ulp,Petrol 93 unleaded,petrol,93 octane,retail
+petrol_93_lrp,Petrol 93 lead replacement,petrol,93 octane,retail
+diesel_500ppm,Diesel 0.05% sulphur,diesel,500 ppm,wholesale
+diesel_50ppm,Diesel 0.005% sulphur,diesel,50 ppm,wholesale
+paraffin,Illuminating paraffin,paraffin,,wholesale
+lpg,Liquefied petroleum gas,lpg,,maximum retail

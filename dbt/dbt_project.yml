@@ -20,3 +20,7 @@ models:
     marts:
       +schema: marts
       +materialized: table
+
+seeds:
+  sa_economy_pulse:
+    +schema: seeds

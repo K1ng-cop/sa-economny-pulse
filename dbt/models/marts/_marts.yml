@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: One row per calendar day from 2008 to the end of next year.
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: dim_currency
+    description: Currencies tracked against the rand.
+    columns:
+      - name: currency_code
+        data_tests: [unique, not_null]
+
+  - name: dim_fuel_product
+    description: Fuel products with display names and groupings.
+    columns:
+      - name: product_code
+        data_tests: [unique, not_null]
+
+  - name: fct_fx_daily
+    description: Daily rand exchange rate per currency, every calendar day. Incremental.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [rate_date, currency_code]
+    columns:
+      - name: rate_date
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: currency_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_currency')
+                field: currency_code
+
+  - name: fct_weather_daily
+    description: Daily weather per location. Incremental.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [weather_date, location]
+    columns:
+      - name: weather_date
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+
+  - name: fct_cpi_monthly
+    description: Monthly CPI per series with year-on-year inflation. Rebuilt in full each run.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series_code, period_month]
+
+  - name: fct_fuel_prices
+    description: Fuel price per adjustment, region and product.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [period_month, region, product_code]
+    columns:
+      - name: product_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_fuel_product')
+                field: product_code
+
+  - name: mart_economy_monthly
+    description: >
+      One row per month: average USD/ZAR, Gauteng petrol 95 and diesel 50ppm prices,
+      headline CPI inflation and Cape Town weather. The main table for the dashboard.
+    columns:
+      - name: month_start
+        data_tests: [unique, not_null]
+      - name: usd_zar_avg
+        description: Average of the month's published USD/ZAR rates (weekend fills excluded).
+      - name: usd_zar_change_pct
+        description: Percentage change in usd_zar_avg from the previous month. Positive = weaker rand.
+      - name: usd_zar_change_pct_prev_month
+        description: Last month's rand move - compare with this month's fuel price change.
+      - name: cpi_headline_yoy_pct
+        description: Headline CPI inflation (series CPS00000), as published by Stats SA.

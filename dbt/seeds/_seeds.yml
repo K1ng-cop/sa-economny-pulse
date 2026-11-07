@@ -1,0 +1,13 @@
+version: 2
+
+seeds:
+  - name: currencies
+    description: Display names for the currencies we track. Edit the CSV to add one.
+    columns:
+      - name: currency_code
+        data_tests: [unique, not_null]
+  - name: fuel_products
+    description: Display names and groupings for fuel product codes used in stg_fuel_prices.
+    columns:
+      - name: product_code
+        data_tests: [unique, not_null]
