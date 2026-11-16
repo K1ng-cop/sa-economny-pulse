@@ -154,11 +154,25 @@ def alert_on_failure(context: dg.RunFailureSensorContext):
     payload = {"content": message} if "discord" in url else {"text": message}  # Discord vs Slack
     requests.post(url, json=payload, timeout=10).raise_for_status()
 
+@dg.run_status_sensor(
+    run_status=dg.DagsterRunStatus.SUCCESS,
+    monitored_jobs=[daily_refresh],
+    default_status=dg.DefaultSensorStatus.RUNNING,
+)
+def heartbeat_on_success(context: dg.RunStatusSensorContext):
+    """Ping an outside monitor (healthchecks.io) after each successful evening run.
+    If the pings stop - laptop off, Dagster not started, schedule off - the monitor
+    notices the silence and alerts Discord. Set HEARTBEAT_URL in .env to switch it on."""
+    url = os.getenv("HEARTBEAT_URL")
+    if not url:
+        context.log.warning("HEARTBEAT_URL not set, so no heartbeat sent")
+        return
+    requests.get(url, timeout=10)
 
 defs = dg.Definitions(
     assets=[fx_rates, weather_daily, fuel_prices, cpi, dbt_models],
     jobs=[daily_refresh, fuel_refresh, cpi_refresh],
     schedules=[daily_schedule],
-    sensors=[new_cpi_file, alert_on_failure],
+    sensors=[new_cpi_file, alert_on_failure, heartbeat_on_success],
     resources={"dbt": DbtCliResource(project_dir=dbt_project)},
 )
