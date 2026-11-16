@@ -51,9 +51,12 @@ ON CONFLICT (effective_date, region, product) DO UPDATE SET
 
 def download_page():
     LANDING_DIR.mkdir(parents=True, exist_ok=True)
+    path = LANDING_DIR / f"fuel_prices_{date.today():%Y%m%d}.html"
+    if path.exists():
+        log.info("Already downloaded today, reusing %s", path)  # one request per day, however often we run
+        return path
     response = requests.get(PAGE_URL, headers={"User-Agent": USER_AGENT}, timeout=60)
     response.raise_for_status()
-    path = LANDING_DIR / f"fuel_prices_{date.today():%Y%m%d}.html"
     path.write_text(response.text, encoding="utf-8")
     log.info("Saved %s", path)
     return path

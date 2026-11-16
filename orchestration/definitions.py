@@ -87,8 +87,8 @@ def dbt_models(context: dg.AssetExecutionContext, dbt: DbtCliResource):
 # "Run this asset and everything downstream of it"
 daily_refresh = dg.define_asset_job(
     "daily_refresh",
-    selection=dg.AssetSelection.assets(fx_rates, weather_daily).downstream(),
-    description="FX and weather, then every dbt model that depends on them.",
+    selection=dg.AssetSelection.assets(fx_rates, weather_daily, fuel_prices).downstream(),
+    description="FX, weather and fuel, then every dbt model that depends on them.",
 )
 
 fuel_refresh = dg.define_asset_job(
@@ -106,8 +106,10 @@ cpi_refresh = dg.define_asset_job(
 
 # ---------------------------------------------------------------- schedules & sensors
 
+# The laptop is on in the evenings, so run at 20:35, 21:35 and 22:35. Every load is
+# incremental and idempotent, so extra runs are cheap - and a late start still gets one.
 daily_schedule = dg.ScheduleDefinition(
-    job=daily_refresh, cron_schedule="0 7 * * *", execution_timezone=TIMEZONE,
+    job=daily_refresh, cron_schedule="35 20-22 * * *", execution_timezone=TIMEZONE,
 )
 
 # Fuel prices change on the first Wednesday of the month and the page is updated a few
@@ -156,7 +158,7 @@ def alert_on_failure(context: dg.RunFailureSensorContext):
 defs = dg.Definitions(
     assets=[fx_rates, weather_daily, fuel_prices, cpi, dbt_models],
     jobs=[daily_refresh, fuel_refresh, cpi_refresh],
-    schedules=[daily_schedule, fuel_schedule],
+    schedules=[daily_schedule],
     sensors=[new_cpi_file, alert_on_failure],
     resources={"dbt": DbtCliResource(project_dir=dbt_project)},
 )
